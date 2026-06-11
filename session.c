@@ -76,7 +76,7 @@ int insert_session(int session_length, char topic[255], char goal[255], char ach
 }
 
 // Affect recording 
-void automatic_insertion()
+void inserting(int manual)
 {
   char topic[255], goal[255], achieved[10];
 
@@ -96,18 +96,59 @@ void automatic_insertion()
   goal[strcspn(goal, "\n")] = '\0';
   printf("Goal: %s\n", goal);
 
-  // Records the time
-  time_t start = time(NULL);
-  session();
-  time_t end = time(NULL);
-
-  session_duration = difftime(end, start);
+  if(manual)
+    {
+      session_duration = manual_questions();
+    }
+  else
+    {
+      // Records the time
+      time_t start = time(NULL);
+      session();
+      time_t end = time(NULL);
+  
+      session_duration = difftime(end, start);
+    }
   
   printf("What did you achieve this session? (Yes or No)\n");
   fgets(achieved, sizeof(achieved), stdin);
   achieved[strcspn(achieved, "\n")] = '\0';
   
   insert_session(session_duration, topic, goal, achieved); 
+}
+
+// Converts a human input into seconds
+int manual_questions()
+{
+  char* session_length[255];
+  printf("How long was the session?(HH:MM:SS)\n");
+  fgets(*session_length, sizeof(*session_length), stdin);
+  *session_length[strcspn(*session_length, "\n")] = '\0';
+
+  char* token = strtok(*session_length, ":");
+  int seconds = 0;
+  
+  for(int i = 0; i < 3; i++)
+    {
+      switch(i)
+	{
+	  // Hours
+	case 0:
+	  seconds +=  atoi(token) * 3600;
+	  break;
+	  // Minutes
+	case 1:
+	  seconds += atoi(token) * 60;
+	  break;
+	  // Seconds
+	case 2:
+	  seconds += atoi(token);
+	  break;
+	}
+      token = strtok(NULL, ":");
+    }
+
+  return seconds;
 }
 
 int main()
