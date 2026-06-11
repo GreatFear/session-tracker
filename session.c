@@ -19,7 +19,7 @@ void session()
 	  buf[strcspn(buf, "\n")] = '\0';
 
 	  // Checks if done is contained in buf
-	  if(strstr("done", buf) == 0)
+	  if(strstr("done", buf) != NULL)
 	    {
 	      break;
 	    }
@@ -33,7 +33,7 @@ void session()
 }
 
 // Printing results to terminal
-void printing_command_line(char session[16], char topic[1024], char goal[1024], char achieved[1024])
+void printing_command_line(char session[20], char topic[255], char goal[255], char achieved[10])
 {
   printf("=== New Entry ===\n");
   printf("Session Time: %02d:%02d:%02d\n", session[0], session[1], session[2]);
@@ -43,10 +43,77 @@ void printing_command_line(char session[16], char topic[1024], char goal[1024], 
 }
 
 // Inserting into the database
-int insert_session(char session[16], char topic[256], char goal[256], char achieved[256])
+int insert_session(int session_length, char topic[255], char goal[255], char achieved[10])
 {
+  PGconn *connection = PQconnectdb("dbname=studying user=session_admin");
 
-  // SET THIS UP LATER
+  if(PQstatus(connection) != CONNECTION_OK)
+    {
+      fprintf(stderr, "Connection Failed: %s\n", PQerrorMessage(connection));
+      PQfinish(connection);
+      return 1;
+    }
+
+  printf("Proceeding to inserting into table\n");
+  char* insert = malloc(4096);
+  
+  sprintf(insert, "INSERT into session (topic, goal, achieved, duration) VALUES ('%s', '%s', '%s', INTERVAL '%d seconds')", topic, goal, achieved, session_length);
+
+  PGresult *result = PQexec(connection, insert);
+
+  if (PQresultStatus(result) != PGRES_TUPLES_OK) {
+        fprintf(stderr, "Insert failed: %s\n", PQerrorMessage(connection));
+        PQclear(result);
+        PQfinish(connection);
+        return 1;
+    }
+
+    // RETURNING gave us the new id
+    printf("Inserted row with session_id = %s\n", PQgetvalue(result, 0, 0));
+  
+  PQclear(result);
+  PQfinish(connection);
+  free(insert);
   
   return 0;
+}
+
+// Affect recording 
+void automatic_insertion()
+{
+  char topic[255], goal[255], achieved[10];
+
+  // achieved is a boolean
+  // session_duration is recorded in seconds
+  int session_duration;
+
+  
+  printf("What is the topic for this session?\n");
+  fgets(topic, sizeof(topic), stdin);
+  topic[strcspn(topic, "\n")] = '\0';
+
+  printf("Topic: %s\n", topic);
+  
+  printf("What is the goal for this session?\n");
+  fgets(goal, sizeof(goal), stdin);
+  goal[strcspn(goal, "\n")] = '\0';
+  printf("Goal: %s\n", goal);
+
+  // Records the time
+  time_t start = time(NULL);
+  session();
+  time_t end = time(NULL);
+
+  session_duration = difftime(end, start);
+  
+  printf("What did you achieve this session? (Yes or No)\n");
+  fgets(achieved, sizeof(achieved), stdin);
+  achieved[strcspn(achieved, "\n")] = '\0';
+  
+  insert_session(session_duration, topic, goal, achieved); 
+}
+
+int main()
+{
+  automatic_insertion();
 }
