@@ -53,24 +53,21 @@ int insert_session(int session_length, char topic[255], char goal[255], char ach
       PQfinish(connection);
       return 1;
     }
-
-  printf("Proceeding to inserting into table\n");
   char* insert = malloc(4096);
   
   sprintf(insert, "INSERT into session (topic, goal, achieved, duration) VALUES ('%s', '%s', '%s', INTERVAL '%d seconds')", topic, goal, achieved, session_length);
 
   PGresult *result = PQexec(connection, insert);
-
-  if (PQresultStatus(result) != PGRES_TUPLES_OK) {
-        fprintf(stderr, "Insert failed: %s\n", PQerrorMessage(connection));
-        PQclear(result);
-        PQfinish(connection);
-        return 1;
+  
+  if (PQresultStatus(result) != PGRES_COMMAND_OK)
+    {
+      fprintf(stderr, "PQ Result Status: %d %d\n", PQresultStatus(result), PGRES_COMMAND_OK);
+      fprintf(stderr, "Insert failed: %s\n", PQerrorMessage(connection));
+      PQclear(result);
+      PQfinish(connection);
+      return 1;
     }
 
-    // RETURNING gave us the new id
-    printf("Inserted row with session_id = %s\n", PQgetvalue(result, 0, 0));
-  
   PQclear(result);
   PQfinish(connection);
   free(insert);
