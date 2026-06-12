@@ -78,33 +78,23 @@ int insert_session(int session_length, char topic[255], char goal[255], char ach
 // Converts a human input into seconds
 int manual_questions()
 {
-  char* session_length[255];
-  printf("How long was the session?(HH:MM:SS)\n");
-  fgets(*session_length, sizeof(*session_length), stdin);
-  *session_length[strcspn(*session_length, "\n")] = '\0';
+  char session_length[20];
+  printf("How long was the session? (HH:MM:SS)\n");
+  fgets(session_length, sizeof(session_length), stdin);
+  session_length[strcspn(session_length, "\n")] = '\0';
 
-  char* token = strtok(*session_length, ":");
+  char* token  = strtok(session_length, ":");
   int seconds = 0;
-  
-  for(int i = 0; i < 3; i++)
-    {
-      switch(i)
-	{
-	  // Hours
-	case 0:
-	  seconds +=  atoi(token) * 3600;
-	  break;
-	  // Minutes
-	case 1:
-	  seconds += atoi(token) * 60;
-	  break;
-	  // Seconds
-	case 2:
-	  seconds += atoi(token);
-	  break;
-	}
-      token = strtok(NULL, ":");
-    }
+  // Adds the hours
+  seconds += atoi(token) * 3600;
+  token = strtok(NULL, ":");
+
+  // Adds the minutes
+  seconds += atoi(token) * 60;
+  token = strtok(NULL, ":");
+
+  // Adds the seconds
+  seconds += atoi(token);
 
   return seconds;
 }
@@ -153,5 +143,5 @@ void inserting(int manual)
 
 int main()
 {
-  automatic_insertion();
+  inserting(1);
 }
