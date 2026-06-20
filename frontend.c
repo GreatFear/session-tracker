@@ -11,30 +11,33 @@ typedef struct {
 
 static void start_session(GtkButton *button, gpointer user_data)
 {
-    AppWidgets *widgets = user_data;
-    const char *topic = gtk_entry_get_text(GTK_ENTRY(widgets->entry_topic));
-    const char *goal  = gtk_entry_get_text(GTK_ENTRY(widgets->entry_goal));
+  AppWidgets *widgets = user_data;
+  const char *topic = gtk_entry_get_text(GTK_ENTRY(widgets->entry_topic));
+  const char *goal  = gtk_entry_get_text(GTK_ENTRY(widgets->entry_goal));
 
-    char msg[256];
-    g_snprintf(msg, sizeof(msg), "Session Started\ntopic: %s\ngoal: %s", topic, goal);
-    gtk_label_set_text(GTK_LABEL(widgets->result_label), msg);
+  char msg[256];
+  g_snprintf(msg, sizeof(msg), "Session Started\ntopic: %s\ngoal: %s", topic, goal);
+  gtk_label_set_text(GTK_LABEL(widgets->result_label), msg);
+  g_print("set label to: %s\n", msg);
+  g_print("ptr: %p\n", (void*)widgets->result_label);
 }
 
 static void insert_session(GtkButton *button, gpointer user_data)
 {
-    AppWidgets *widgets = user_data;
-    const char *topic = gtk_entry_get_text(GTK_ENTRY(widgets->entry_topic));
-    const char *goal  = gtk_entry_get_text(GTK_ENTRY(widgets->entry_goal));
-    const char *session_length = gtk_entry_get_text(GTK_ENTRY(widgets->entry_session_length));
+  AppWidgets *widgets = user_data;
+  const char *topic = gtk_entry_get_text(GTK_ENTRY(widgets->entry_topic));
+  const char *goal  = gtk_entry_get_text(GTK_ENTRY(widgets->entry_goal));
+  const char *session_length = gtk_entry_get_text(GTK_ENTRY(widgets->entry_session_length));
 
-    char msg[256];
-    g_snprintf(msg, sizeof(msg), "Inserted Session\ntopic: %s\ngoal: %s\nSession Length: %s", topic, goal, session_length);
-    gtk_label_set_text(GTK_LABEL(widgets->result_label), msg);
+  char msg[256];
+  g_snprintf(msg, sizeof(msg), "Inserted Session\ntopic: %s\ngoal: %s\nSession Length: %s", topic, goal, session_length);
+  gtk_label_set_text(GTK_LABEL(widgets->result_label), msg);
 }
 
-// Creating the Tab
-static void automatic_tab(AppWidgets *widgets, GtkNotebook *notebook)
+// Creating the Automatic Tab
+static void automatic_tab(GtkWidget *window, GtkNotebook *notebook)
 {
+  AppWidgets *widgets = g_new0(AppWidgets, 1);
   GtkWidget *page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
   GtkWidget *heading = gtk_label_new("Automatic Insert");
   GtkWidget *entry = gtk_entry_new();
@@ -51,27 +54,30 @@ static void automatic_tab(AppWidgets *widgets, GtkNotebook *notebook)
   
   GtkWidget *goal_prompt = gtk_label_new("What is the goal of this session?");
   gtk_box_pack_start(GTK_BOX(vbox), goal_prompt, FALSE, FALSE, 0);
-
+  
   widgets->entry_goal = gtk_entry_new();
   gtk_entry_set_placeholder_text(GTK_ENTRY(widgets->entry_goal), "Enter Goal");
   gtk_box_pack_start(GTK_BOX(vbox), widgets->entry_goal, FALSE, FALSE, 0);
-
+  
   // Creating a start button to the session
   GtkWidget *start_button = gtk_button_new_with_label("Start Session");
   gtk_box_pack_start(GTK_BOX(vbox), start_button, FALSE, FALSE, 0);
-
+  
   widgets->result_label = gtk_label_new("");
   gtk_box_pack_start(GTK_BOX(vbox), widgets->result_label, FALSE, FALSE, 0);
-
+  
+  // Connecting the start_button to start_session
+  // Once start_button is clicked invoke start_session
+  g_object_set_data_full(G_OBJECT(window), "auto_widgets", widgets, g_free);
   g_signal_connect(start_button, "clicked", G_CALLBACK(start_session), widgets);
   
   int index = gtk_notebook_append_page(notebook, page, gtk_label_new("Automatic"));
   gtk_widget_show_all(page);
-  gtk_notebook_set_current_page(notebook, index);
 }
 
-static void manual_tab(AppWidgets *widgets, GtkNotebook *notebook)
+static void manual_tab(GtkWidget *window, GtkNotebook *notebook)
 {
+  AppWidgets *widgets = g_new0(AppWidgets, 1);
   GtkWidget *page = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
   GtkWidget *heading = gtk_label_new("Manual Insert");
   GtkWidget *entry = gtk_entry_new();
@@ -106,11 +112,11 @@ static void manual_tab(AppWidgets *widgets, GtkNotebook *notebook)
   widgets->result_label = gtk_label_new("");
   gtk_box_pack_start(GTK_BOX(vbox), widgets->result_label, FALSE, FALSE, 0);
 
+  g_object_set_data_full(G_OBJECT(window), "auto_widgets", widgets, g_free);
   g_signal_connect(insert_button, "clicked", G_CALLBACK(insert_session), widgets);
   
   int index = gtk_notebook_append_page(notebook, page, gtk_label_new("Manual"));
   gtk_widget_show_all(page);
-  gtk_notebook_set_current_page(notebook, index);
 }
 
 // Application Start Up
@@ -127,11 +133,14 @@ static void start_application(GtkApplication *app, gpointer user_data)
   
   GtkWidget *notebook = gtk_notebook_new();
 
-  automatic_tab(widgets, GTK_NOTEBOOK(notebook));
-
-  manual_tab(widgets, GTK_NOTEBOOK(notebook));
+  automatic_tab(window, GTK_NOTEBOOK(notebook));
+  
+  manual_tab(window, GTK_NOTEBOOK(notebook));
   
   gtk_container_add(GTK_CONTAINER(window), notebook);
+
+  // Displaying Automatic first
+  gtk_notebook_set_current_page(GTK_NOTEBOOK(notebook), 0);
   
   gtk_widget_show_all(window);
 }
