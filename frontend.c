@@ -22,6 +22,7 @@ static void start_session(GtkButton *button, gpointer user_data)
   g_print("ptr: %p\n", (void*)widgets->result_label);
 }
 
+// 
 static void insert_session(GtkButton *button, gpointer user_data)
 {
   AppWidgets *widgets = user_data;
@@ -133,6 +134,7 @@ static void start_application(GtkApplication *app, gpointer user_data)
   
   GtkWidget *notebook = gtk_notebook_new();
 
+  // Loading Tabs
   automatic_tab(window, GTK_NOTEBOOK(notebook));
   
   manual_tab(window, GTK_NOTEBOOK(notebook));
