@@ -2,6 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "session.h"
+
 typedef struct {
   GtkWidget *entry_topic;
   GtkWidget *entry_goal;
@@ -11,6 +13,7 @@ typedef struct {
 
 static void start_session(GtkButton *button, gpointer user_data)
 {
+  printf("Initiating Session");
   AppWidgets *widgets = user_data;
   const char *topic = gtk_entry_get_text(GTK_ENTRY(widgets->entry_topic));
   const char *goal  = gtk_entry_get_text(GTK_ENTRY(widgets->entry_goal));
@@ -20,9 +23,9 @@ static void start_session(GtkButton *button, gpointer user_data)
   gtk_label_set_text(GTK_LABEL(widgets->result_label), msg);
   g_print("set label to: %s\n", msg);
   g_print("ptr: %p\n", (void*)widgets->result_label);
+  g_free(widgets);
 }
 
-// 
 static void insert_session(GtkButton *button, gpointer user_data)
 {
   AppWidgets *widgets = user_data;
@@ -33,6 +36,9 @@ static void insert_session(GtkButton *button, gpointer user_data)
   char msg[256];
   g_snprintf(msg, sizeof(msg), "Inserted Session\ntopic: %s\ngoal: %s\nSession Length: %s", topic, goal, session_length);
   gtk_label_set_text(GTK_LABEL(widgets->result_label), msg);
+
+  // Please segfault stop hurting me
+  g_free(widgets);
 }
 
 // Creating the Automatic Tab
@@ -69,7 +75,9 @@ static void automatic_tab(GtkWidget *window, GtkNotebook *notebook)
   
   // Connecting the start_button to start_session
   // Once start_button is clicked invoke start_session
-  g_object_set_data_full(G_OBJECT(window), "auto_widgets", widgets, g_free);
+  /* g_object_set_data_full(G_OBJECT(window), "auto_widgets", widgets, g_free); */
+
+  g_signal_connect_swapped(start_button, "destroy", G_CALLBACK(g_free), widgets);
   g_signal_connect(start_button, "clicked", G_CALLBACK(start_session), widgets);
   
   int index = gtk_notebook_append_page(notebook, page, gtk_label_new("Automatic"));
@@ -113,7 +121,7 @@ static void manual_tab(GtkWidget *window, GtkNotebook *notebook)
   widgets->result_label = gtk_label_new("");
   gtk_box_pack_start(GTK_BOX(vbox), widgets->result_label, FALSE, FALSE, 0);
 
-  g_object_set_data_full(G_OBJECT(window), "auto_widgets", widgets, g_free);
+  g_signal_connect_swapped(insert_button, "destroy", G_CALLBACK(g_free), widgets);
   g_signal_connect(insert_button, "clicked", G_CALLBACK(insert_session), widgets);
   
   int index = gtk_notebook_append_page(notebook, page, gtk_label_new("Manual"));
